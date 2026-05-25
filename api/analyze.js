@@ -1,23 +1,14 @@
-export const config = { runtime: 'edge' };
+module.exports = async function handler(req, res) {
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+  if (req.method === 'OPTIONS') return res.status(200).end();
+  if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
 
-export default async function handler(req) {
-  if (req.method === 'OPTIONS') {
-    return new Response(null, {
-      headers: {
-        'Access-Control-Allow-Origin': '*',
-        'Access-Control-Allow-Methods': 'POST, OPTIONS',
-        'Access-Control-Allow-Headers': 'Content-Type',
-      }
-    });
-  }
-
-  if (req.method !== 'POST') {
-    return new Response(JSON.stringify({ error: 'Method not allowed' }), { status: 405 });
-  }
+  const { system, message } = req.body || {};
+  if (!system || !message) return res.status(400).json({ error: 'Missing fields' });
 
   try {
-    const { system, message } = await req.json();
-
     const response = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
       headers: {
@@ -35,15 +26,9 @@ export default async function handler(req) {
 
     const data = await response.json();
     const text = data.content?.filter(b => b.type === 'text').map(b => b.text).join('') || '';
-
-    return new Response(JSON.stringify({ text }), {
-      headers: {
-        'Content-Type': 'application/json',
-        'Access-Control-Allow-Origin': '*'
-      }
-    });
+    res.status(200).json({ text });
 
   } catch (e) {
-    return new Response(JSON.stringify({ error: e.message }), { status: 500 });
+    res.status(500).json({ error: e.message });
   }
 }
