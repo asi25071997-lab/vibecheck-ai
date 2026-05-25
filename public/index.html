@@ -555,7 +555,13 @@ function selectPol(btn, id, emoji, name, desc) {
 }
 
 async function generateReply() {
-  if (!selectedPolId || !lastEmail) return;
+  // Always read fresh from textarea
+  const emailInput = document.getElementById('emailInput').value.trim();
+  if (emailInput) lastEmail = emailInput;
+  if (!selectedPolId || !lastEmail) {
+    alert('Najpierw wklej maila i kliknij "Przeanalizuj Vibe"');
+    return;
+  }
   const btn = document.getElementById('genReplyBtn');
   btn.disabled = true; btn.textContent = '⏳ Piszę odpowiedź...';
   document.getElementById('replyOutput').classList.remove('show');
@@ -598,7 +604,9 @@ function copyReply() {
 
 // ── RED FLAG REPORT ──
 async function generateRedFlagReport() {
-  if (!lastEmail) return;
+  const emailInput = document.getElementById('emailInput').value.trim();
+  if (emailInput) lastEmail = emailInput;
+  if (!lastEmail) { alert('Najpierw wklej maila i kliknij "Przeanalizuj Vibe"'); return; }
   const btn = document.getElementById('genReportBtn');
   btn.disabled = true; btn.textContent = '⏳ Analizuję red flagi...';
   document.getElementById('reportOutput').style.display = 'none';
