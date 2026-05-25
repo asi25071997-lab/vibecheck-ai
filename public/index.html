@@ -423,7 +423,8 @@ async function callClaude(system, userMsg, maxTokens = 900) {
   if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
   const data = await resp.json();
   if (data.error) throw new Error(data.error);
-  return data.text || '';
+  if (!data.text) throw new Error('No text in response');
+  return data.text;
 }
 
 function parseJSON(raw) {
