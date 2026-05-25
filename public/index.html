@@ -414,26 +414,26 @@ let selectedPolDesc = null;
 let selectedPolName = null;
 
 // ── Helpers ──
-async function callClaude(system, userMsg, maxTokens = 900) {
-  const resp = await fetch("/api/analyze", {
+async function callClaude(system, userMsg) {
+  const resp = await fetch("https://api.anthropic.com/v1/messages", {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ system, message: userMsg })
+    headers: {
+      "Content-Type": "application/json",
+      "x-api-key": "TUTAJ_WKLEJ_KLUCZ_SK-ANT",
+      "anthropic-version": "2023-06-01",
+      "anthropic-dangerous-direct-browser-access": "true"
+    },
+    body: JSON.stringify({
+      model: "claude-sonnet-4-20250514",
+      max_tokens: 1000,
+      system,
+      messages: [{ role: "user", content: userMsg }]
+    })
   });
   if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
   const data = await resp.json();
-  if (data.error) throw new Error(data.error);
-  if (!data.text) throw new Error('No text in response');
-  return data.text;
+  return data.content?.filter(b => b.type === 'text').map(b => b.text).join('') || '';
 }
-
-function parseJSON(raw) {
-  const cleaned = raw.replace(/```json|```/g, '').trim();
-  const match = cleaned.match(/\{[\s\S]*\}/);
-  if (!match) throw new Error('No JSON');
-  return JSON.parse(match[0]);
-}
-
 // ── FALLBACK DATA ──
 function getFallbackAnalysis() {
   const toxicity = parseFloat((5 + Math.random() * 4).toFixed(1));
