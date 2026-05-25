@@ -1,0 +1,697 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>VibeCheck AI — Twój mail. Prześwietlony.</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;700;800&family=DM+Mono:ital,wght@0,400;1,400&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0a0f;
+    --surface: #111118;
+    --card: #16161f;
+    --border: #2a2a3a;
+    --accent: #ff3c6e;
+    --accent2: #7c3aed;
+    --accent3: #00d4aa;
+    --text: #f0f0f8;
+    --muted: #6b6b88;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { background: var(--bg); color: var(--text); font-family: 'DM Mono', monospace; min-height: 100vh; overflow-x: hidden; }
+  body::before { content:''; position:fixed; inset:0; background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E"); pointer-events:none; z-index:1000; opacity:0.4; }
+
+  nav { display:flex; justify-content:space-between; align-items:center; padding:1.5rem 2.5rem; border-bottom:1px solid var(--border); position:sticky; top:0; background:rgba(10,10,15,0.92); backdrop-filter:blur(12px); z-index:100; }
+  .logo { font-family:'Syne',sans-serif; font-weight:800; font-size:1.3rem; letter-spacing:-0.02em; }
+  .logo span { color:var(--accent); }
+  .nav-badge { background:var(--accent); color:white; font-size:0.65rem; padding:0.2rem 0.6rem; border-radius:100px; font-family:'Syne',sans-serif; font-weight:700; letter-spacing:0.05em; animation:pulse 2s infinite; }
+  @keyframes pulse { 0%,100%{opacity:1}50%{opacity:0.6} }
+
+  hero { display:block; padding:5rem 2.5rem 3rem; max-width:900px; margin:0 auto; text-align:center; position:relative; }
+  .eyebrow { font-size:0.75rem; color:var(--accent3); letter-spacing:0.2em; text-transform:uppercase; margin-bottom:1.5rem; display:inline-block; border:1px solid var(--accent3); padding:0.3rem 1rem; border-radius:100px; }
+  h1 { font-family:'Syne',sans-serif; font-size:clamp(2.8rem,7vw,5.5rem); font-weight:800; line-height:1.0; letter-spacing:-0.03em; margin-bottom:1.5rem; }
+  h1 .red { color:var(--accent); }
+  h1 .purple { color:#a78bfa; }
+  .subtitle { font-size:1rem; color:var(--muted); max-width:500px; margin:0 auto 3rem; line-height:1.7; }
+  .glow { position:absolute; width:600px; height:300px; background:radial-gradient(ellipse,rgba(255,60,110,0.12) 0%,transparent 70%); top:0; left:50%; transform:translateX(-50%); pointer-events:none; }
+
+  /* Demo */
+  .demo-wrapper { max-width:780px; margin:0 auto; padding:0 2rem 4rem; }
+  .demo-card { background:var(--card); border:1px solid var(--border); border-radius:16px; overflow:hidden; box-shadow:0 0 80px rgba(255,60,110,0.08); }
+  .demo-header { padding:1rem 1.5rem; border-bottom:1px solid var(--border); display:flex; align-items:center; gap:0.75rem; background:var(--surface); }
+  .demo-dots { display:flex; gap:6px; }
+  .dot { width:12px; height:12px; border-radius:50%; }
+  .dot-r{background:#ff5f57}.dot-y{background:#febc2e}.dot-g{background:#28c840}
+  .demo-title { font-size:0.75rem; color:var(--muted); margin-left:0.5rem; }
+  .demo-body { padding:1.5rem; display:grid; grid-template-columns:1fr 1fr; gap:1.5rem; }
+  @media(max-width:600px){.demo-body{grid-template-columns:1fr}}
+
+  .input-section label { display:block; font-size:0.7rem; letter-spacing:0.12em; text-transform:uppercase; color:var(--muted); margin-bottom:0.6rem; }
+  textarea { width:100%; background:var(--bg); border:1px solid var(--border); border-radius:10px; color:var(--text); font-family:'DM Mono',monospace; font-size:0.8rem; padding:1rem; resize:vertical; min-height:180px; outline:none; transition:border-color 0.2s; line-height:1.6; }
+  textarea:focus { border-color:var(--accent); }
+  textarea::placeholder { color:var(--muted); }
+
+  .analyze-btn { width:100%; margin-top:1rem; padding:0.9rem 1.5rem; background:var(--accent); color:white; border:none; border-radius:10px; font-family:'Syne',sans-serif; font-weight:700; font-size:0.95rem; cursor:pointer; transition:all 0.2s; letter-spacing:0.02em; }
+  .analyze-btn:hover:not(:disabled) { transform:translateY(-1px); box-shadow:0 8px 30px rgba(255,60,110,0.4); }
+  .analyze-btn:disabled { opacity:0.5; cursor:not-allowed; transform:none; }
+  .analyze-btn.loading .btn-text { display:none; }
+  .analyze-btn .btn-spinner { display:none; }
+  .analyze-btn.loading .btn-spinner { display:inline; }
+
+  /* Results */
+  .results-section { display:flex; flex-direction:column; gap:1rem; }
+  .result-placeholder { background:var(--bg); border:1px dashed var(--border); border-radius:10px; height:180px; display:flex; align-items:center; justify-content:center; color:var(--muted); font-size:0.8rem; text-align:center; padding:1.5rem; }
+  .result-box { background:var(--bg); border:1px solid var(--border); border-radius:10px; padding:1.2rem; display:none; animation:slideIn 0.3s ease; }
+  @keyframes slideIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+  .result-box.show { display:block; }
+  .result-label { font-size:0.65rem; letter-spacing:0.15em; text-transform:uppercase; color:var(--muted); margin-bottom:0.6rem; }
+  .toxicity-bar { height:8px; background:var(--border); border-radius:100px; margin:0.5rem 0 0.3rem; overflow:hidden; }
+  .toxicity-fill { height:100%; border-radius:100px; transition:width 1s ease; width:0%; }
+  .toxicity-score { font-family:'Syne',sans-serif; font-size:2rem; font-weight:800; }
+  .vibes-grid { display:flex; flex-wrap:wrap; gap:0.4rem; margin-top:0.5rem; }
+  .vibe-tag { font-size:0.7rem; padding:0.25rem 0.7rem; border-radius:100px; border:1px solid; }
+  .analysis-text { font-size:0.82rem; line-height:1.7; color:#d0d0e8; }
+  .playlist-item { display:flex; align-items:center; gap:0.75rem; padding:0.5rem 0; border-bottom:1px solid var(--border); font-size:0.78rem; }
+  .playlist-item:last-child { border-bottom:none; }
+  .track-num{color:var(--muted);width:20px;text-align:right}
+  .track-info{flex:1}.track-name{color:var(--text)}.track-artist{color:var(--muted);font-size:0.7rem}.track-emoji{font-size:1.1rem}
+  .error-msg { font-size:0.75rem; color:var(--accent); margin-top:0.5rem; display:none; }
+
+  /* ── NEW: Reply section below demo ── */
+  .extra-section { max-width:780px; margin:0 auto; padding:0 2rem 3rem; display:none; animation:slideIn 0.4s ease; }
+  .extra-section.show { display:block; }
+  .extra-title { font-family:'Syne',sans-serif; font-weight:800; font-size:1.1rem; margin-bottom:1rem; }
+  .extra-title span { color:var(--accent); }
+
+  /* Politician picker */
+  .politician-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:0.75rem; margin-bottom:1.2rem; }
+  @media(max-width:500px){.politician-grid{grid-template-columns:repeat(2,1fr)}}
+  .pol-btn { background:var(--card); border:1px solid var(--border); border-radius:10px; padding:0.8rem 0.4rem; cursor:pointer; transition:all 0.2s; text-align:center; }
+  .pol-btn:hover { border-color:var(--accent); transform:translateY(-2px); }
+  .pol-btn.active { border-color:var(--accent); background:rgba(255,60,110,0.1); box-shadow:0 0 20px rgba(255,60,110,0.2); }
+  .pol-btn .pol-emoji { font-size:1.6rem; display:block; margin-bottom:0.3rem; }
+  .pol-btn .pol-name { font-size:0.65rem; color:var(--muted); }
+  .pol-btn.active .pol-name { color:var(--accent); }
+
+  .reply-output { background:var(--card); border:1px solid var(--border); border-radius:10px; padding:1.2rem; min-height:80px; font-size:0.85rem; line-height:1.7; color:#d0d0e8; white-space:pre-wrap; display:none; animation:slideIn 0.3s ease; }
+  .reply-output.show { display:block; }
+  .gen-reply-btn { margin-top:0.8rem; padding:0.7rem 1.4rem; background:var(--accent2); color:white; border:none; border-radius:8px; font-family:'Syne',sans-serif; font-weight:700; font-size:0.85rem; cursor:pointer; transition:all 0.2s; }
+  .gen-reply-btn:hover:not(:disabled) { box-shadow:0 6px 20px rgba(124,58,237,0.4); transform:translateY(-1px); }
+  .gen-reply-btn:disabled { opacity:0.5; cursor:not-allowed; }
+  .copy-reply-btn { margin-top:0.5rem; margin-left:0.5rem; padding:0.7rem 1.2rem; background:transparent; color:var(--accent3); border:1px solid var(--accent3); border-radius:8px; font-family:'DM Mono',monospace; font-size:0.75rem; cursor:pointer; transition:all 0.2s; }
+  .copy-reply-btn:hover { background:rgba(0,212,170,0.1); }
+
+  /* ── Meme generator ── */
+  .meme-canvas-wrap { margin-top:0.8rem; border-radius:10px; overflow:hidden; border:1px solid var(--border); display:none; }
+  .meme-canvas-wrap.show { display:block; animation:slideIn 0.3s ease; }
+  canvas { display:block; width:100%; }
+  .gen-meme-btn { margin-top:0.8rem; padding:0.7rem 1.4rem; background:var(--accent3); color:#0a0a0f; border:none; border-radius:8px; font-family:'Syne',sans-serif; font-weight:700; font-size:0.85rem; cursor:pointer; transition:all 0.2s; }
+  .gen-meme-btn:hover:not(:disabled) { box-shadow:0 6px 20px rgba(0,212,170,0.35); transform:translateY(-1px); }
+  .gen-meme-btn:disabled { opacity:0.5; cursor:not-allowed; }
+  .save-meme-btn { margin-top:0.5rem; margin-left:0.5rem; padding:0.7rem 1.2rem; background:transparent; color:var(--muted); border:1px solid var(--border); border-radius:8px; font-family:'DM Mono',monospace; font-size:0.75rem; cursor:pointer; transition:all 0.2s; }
+  .save-meme-btn:hover { border-color:var(--text); color:var(--text); }
+
+  /* Pricing */
+  .pricing { padding:4rem 2rem; max-width:900px; margin:0 auto; }
+  .section-label { text-align:center; font-size:0.7rem; letter-spacing:0.2em; text-transform:uppercase; color:var(--accent3); margin-bottom:1rem; }
+  .section-title { font-family:'Syne',sans-serif; font-size:2.5rem; font-weight:800; text-align:center; letter-spacing:-0.02em; margin-bottom:3rem; }
+  .pricing-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:1.5rem; }
+  @media(max-width:700px){.pricing-grid{grid-template-columns:1fr} h1{font-size:2.5rem}}
+  .pricing-card { background:var(--card); border:1px solid var(--border); border-radius:16px; padding:2rem 1.5rem; position:relative; transition:transform 0.2s; }
+  .pricing-card:hover { transform:translateY(-4px); }
+  .pricing-card.featured { border-color:var(--accent); box-shadow:0 0 40px rgba(255,60,110,0.15); }
+  .pricing-card.featured::before { content:'NAJPOPULARNIEJSZY'; position:absolute; top:-12px; left:50%; transform:translateX(-50%); background:var(--accent); color:white; font-size:0.6rem; font-weight:700; font-family:'Syne',sans-serif; letter-spacing:0.1em; padding:0.25rem 1rem; border-radius:100px; white-space:nowrap; }
+  .plan-name { font-family:'Syne',sans-serif; font-weight:700; font-size:1.1rem; margin-bottom:0.5rem; }
+  .plan-price { font-family:'Syne',sans-serif; font-size:2.5rem; font-weight:800; letter-spacing:-0.03em; margin:0.75rem 0; }
+  .plan-price span { font-size:1rem; color:var(--muted); font-weight:400; }
+  .plan-features { list-style:none; margin:1.5rem 0; display:flex; flex-direction:column; gap:0.6rem; }
+  .plan-features li { font-size:0.8rem; color:var(--muted); display:flex; gap:0.6rem; align-items:flex-start; }
+  .plan-features li::before { content:'→'; color:var(--accent3); flex-shrink:0; }
+  .plan-btn { width:100%; padding:0.8rem; border-radius:8px; font-family:'Syne',sans-serif; font-weight:700; font-size:0.85rem; cursor:pointer; transition:all 0.2s; letter-spacing:0.03em; }
+  .plan-btn-outline { background:transparent; border:1px solid var(--border); color:var(--text); }
+  .plan-btn-outline:hover { border-color:var(--text); }
+  .plan-btn-filled { background:var(--accent); border:1px solid var(--accent); color:white; }
+  .plan-btn-filled:hover { box-shadow:0 4px 20px rgba(255,60,110,0.4); }
+
+  /* Ticker */
+  .ticker { border-top:1px solid var(--border); border-bottom:1px solid var(--border); padding:1rem 0; overflow:hidden; white-space:nowrap; margin:2rem 0; }
+  .ticker-inner { display:inline-block; animation:ticker 20s linear infinite; }
+  .ticker-item { display:inline-block; padding:0 3rem; font-size:0.75rem; color:var(--muted); }
+  .ticker-item strong { color:var(--accent); font-family:'Syne',sans-serif; }
+  @keyframes ticker{from{transform:translateX(0)}to{transform:translateX(-50%)}}
+
+  footer { text-align:center; padding:3rem; color:var(--muted); font-size:0.75rem; border-top:1px solid var(--border); }
+
+  .divider { height:1px; background:var(--border); margin:1.5rem 0; }
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="logo">vibe<span>check</span>.ai</div>
+  <div class="nav-badge">🔥 BETA — DARMOWE DEMO</div>
+</nav>
+
+<section style="position:relative;">
+  <hero>
+    <div class="glow"></div>
+    <div class="eyebrow">✦ powered by Claude AI</div>
+    <h1>Twój mail.<br><span class="red">Prześwietlony.</span><br><span class="purple">Bez litości.</span></h1>
+    <p class="subtitle">Wklej maila od szefa, klienta albo ex-partnera. AI powie Ci co tak naprawdę mieli na myśli, odpowie jak Trump, i wygeneruje mema.</p>
+  </hero>
+</section>
+
+<div class="ticker">
+  <div class="ticker-inner">
+    <span class="ticker-item">🧪 Przeanalizowanych maili: <strong>14,872</strong></span>
+    <span class="ticker-item">☠️ Średni poziom toksyczności: <strong>6.4/10</strong></span>
+    <span class="ticker-item">🏆 Najbardziej toksyczny szef: <strong>9.8/10</strong></span>
+    <span class="ticker-item">🎵 Playlist wygenerowanych: <strong>8,301</strong></span>
+    <span class="ticker-item">🤡 Memów stworzonych: <strong>5,129</strong></span>
+    <span class="ticker-item">🧪 Przeanalizowanych maili: <strong>14,872</strong></span>
+    <span class="ticker-item">☠️ Średni poziom toksyczności: <strong>6.4/10</strong></span>
+    <span class="ticker-item">🏆 Najbardziej toksyczny szef: <strong>9.8/10</strong></span>
+    <span class="ticker-item">🎵 Playlist wygenerowanych: <strong>8,301</strong></span>
+    <span class="ticker-item">🤡 Memów stworzonych: <strong>5,129</strong></span>
+  </div>
+</div>
+
+<!-- DEMO -->
+<div class="demo-wrapper">
+  <div class="demo-card">
+    <div class="demo-header">
+      <div class="demo-dots">
+        <div class="dot dot-r"></div><div class="dot dot-y"></div><div class="dot dot-g"></div>
+      </div>
+      <span class="demo-title">vibecheck.ai — demo ✦ claude-powered</span>
+    </div>
+    <div class="demo-body">
+      <div class="input-section">
+        <label>// wklej maila tutaj</label>
+        <textarea id="emailInput" placeholder="Np.:&#10;&#10;Cześć,&#10;&#10;Jak wiesz, termin był wczoraj. Byłoby miło gdybyś informował zespół o opóźnieniach. Przy okazji — pamiętaj o spotkaniu w piątek, bo będziemy omawiać priorytety i efektywność.&#10;&#10;Pozdrawiam,&#10;Marek"></textarea>
+        <button class="analyze-btn" id="analyzeBtn" onclick="analyzeEmail()">
+          <span class="btn-text">⚡ Przeanalizuj Vibe</span>
+          <span class="btn-spinner">⏳ Analizuję...</span>
+        </button>
+        <div class="error-msg" id="errorMsg">Wpisz treść maila przed analizą.</div>
+      </div>
+
+      <div class="results-section" id="resultsSection">
+        <div class="result-placeholder" id="placeholder">← Wklej maila i kliknij przycisk.<br><br>AI prześwietli każde zdanie.<br>Bez taryfy ulgowej. 🔍</div>
+
+        <div class="result-box" id="toxicityBox">
+          <div class="result-label">// poziom toksyczności</div>
+          <div class="toxicity-score" id="toxicityScore">—</div>
+          <div class="toxicity-bar"><div class="toxicity-fill" id="toxicityFill"></div></div>
+          <div style="font-size:0.72rem;color:var(--muted)" id="toxicityLabel">—</div>
+        </div>
+
+        <div class="result-box" id="vibesBox">
+          <div class="result-label">// wykryte vibes</div>
+          <div class="vibes-grid" id="vibesTags"></div>
+        </div>
+
+        <div class="result-box" id="analysisBox">
+          <div class="result-label">// co naprawdę chcieli powiedzieć</div>
+          <div class="analysis-text" id="analysisText">—</div>
+        </div>
+
+        <div class="result-box" id="playlistBox">
+          <div class="result-label">// twoja playlist na ten ból</div>
+          <div id="playlistItems"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ── REPLY AS POLITICIAN ── -->
+<div class="extra-section" id="replySection">
+  <div class="demo-card">
+    <div class="demo-header">
+      <div class="demo-dots"><div class="dot dot-r"></div><div class="dot dot-y"></div><div class="dot dot-g"></div></div>
+      <span class="demo-title">✦ odpowiedz jak... polityk</span>
+    </div>
+    <div style="padding:1.5rem;">
+      <div class="extra-title">Kto ma <span>odpowiedzieć</span> na tego maila?</div>
+
+      <div class="politician-grid">
+        <button class="pol-btn" onclick="selectPol(this,'trump','🇺🇸','Trump','używa WIELKICH LITER dla dramatyzmu, powtarza słowa jak WIELKI i KATASTROFA, wszystko jest albo najlepsze albo najgorsze na świecie, chwali się własnymi sukcesami w każdym zdaniu, mówi po polsku ale wtrąca angielskie słowa jak TREMENDOUS lub FAKE')">
+          <span class="pol-emoji">🇺🇸</span><span class="pol-name">Trump</span>
+        </button>
+        <button class="pol-btn" onclick="selectPol(this,'tusk','🇵🇱','Tusk','mówi z pozycji kogoś doświadczonego i zmęczonego głupotą innych, elegancki sarkazm, odwołuje się do Europy i wartości demokratycznych, delikatnie sugeruje że rozmówca jest niedojrzały, kończy uprzejmie ale z wyraźną wyższością')">
+          <span class="pol-emoji">🇵🇱</span><span class="pol-name">Tusk</span>
+        </button>
+        <button class="pol-btn" onclick="selectPol(this,'kaczynski','⚡','Kaczyński','widzi wszędzie wrogie siły i spiski, wszystko jest atakiem na Polskę lub wartości, dramatyczne pauzy w zdaniach, mówi że powie prawdę w oczy bo się nie boi, kończy patriotycznym akcentem, czarno-białe widzenie świata')">
+          <span class="pol-emoji">⚡</span><span class="pol-name">Kaczyński</span>
+        </button>
+        <button class="pol-btn" onclick="selectPol(this,'macron','🥐','Macron','filozofuje o abstrakcyjnych pojęciach jak demokracja i dialog zamiast mówić konkretnie, używa wielkich słów które brzmią mądrze ale nic nie znaczą, widzi w każdym problemie głębszy sens i szansę na transformację, po polsku ale z lekkim poczuciem wyższości intelektualnej')">
+          <span class="pol-emoji">🥐</span><span class="pol-name">Macron</span>
+        </button>
+        <button class="pol-btn" onclick="selectPol(this,'putin','🐻','Putin','absolutne minimum słów, zero emocji, każde zdanie brzmi jak rozkaz lub cicha groźba, nigdy nie tłumaczy ani nie przeprasza, odpowiada jakby wiedział więcej niż mówi, krótko i zimno')">
+          <span class="pol-emoji">🐻</span><span class="pol-name">Putin</span>
+        </button>
+        <button class="pol-btn" onclick="selectPol(this,'konfederacja','🔥','Konfederacja','wszystko to zamach na wolność i etatyzm, CAPS LOCK dla emocji, odwołuje się do konstytucji i praw naturalnych, nazywa procedury lewactwem lub biurokracją, kończy hasłem o wolności')">
+          <span class="pol-emoji">🔥</span><span class="pol-name">Konfederacja</span>
+        </button>
+        <button class="pol-btn" onclick="selectPol(this,'obama','🌊','Obama','zaczyna od przyznania racji rozmówcy żeby zbudować zaufanie, opowiada krótką historię z morałem, używa słów jak nadzieja i razem i wartości, inspirujący ale bez konkretów, kończy optymistycznie po polsku')">
+          <span class="pol-emoji">🌊</span><span class="pol-name">Obama</span>
+        </button>
+        <button class="pol-btn" onclick="selectPol(this,'elon','🚀','Elon','bardzo krótko i chaotycznie, kwestionuje sens istnienia spotkań i procesów, proponuje zastąpić wszystko technologią, wtrąca emoji rakiety, pisze jakby jednocześnie tweetował i zarządzał pięcioma firmami, po polsku ale naturalnie wtrąca angielskie słowa techniczne')">
+          <span class="pol-emoji">🚀</span><span class="pol-name">Elon</span>
+        </button>
+      </div>
+
+      <button class="gen-reply-btn" id="genReplyBtn" onclick="generateReply()" disabled>
+        ✍️ Generuj odpowiedź
+      </button>
+      <button class="copy-reply-btn" id="copyReplyBtn" onclick="copyReply()" style="display:none;">
+        ⎘ Kopiuj
+      </button>
+
+      <div class="reply-output" id="replyOutput"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ── RED FLAG REPORT ── -->
+<div class="extra-section" id="redFlagSection">
+  <div class="demo-card">
+    <div class="demo-header">
+      <div class="demo-dots"><div class="dot dot-r"></div><div class="dot dot-y"></div><div class="dot dot-g"></div></div>
+      <span class="demo-title">✦ red flag report™ — czy w ogóle odpowiadać?</span>
+    </div>
+    <div style="padding:1.5rem;">
+      <div class="extra-title">Twój <span>raport granic</span></div>
+      <p style="font-size:0.75rem;color:var(--muted);margin-bottom:1.2rem;">AI analizuje dynamikę władzy, boundary violations i mówi wprost co z tym zrobić.</p>
+      <button class="gen-meme-btn" id="genReportBtn" onclick="generateRedFlagReport()" style="background:var(--accent);">
+        🚩 Generuj Red Flag Report
+      </button>
+      <div id="reportOutput" style="display:none; margin-top:1.2rem; animation: slideIn 0.4s ease;">
+
+        <!-- Screenshotowalny raport -->
+        <div id="reportCard" style="background:#0d0d14; border:1px solid #2a2a3a; border-radius:12px; padding:1.4rem; font-family:'DM Mono',monospace;">
+
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem; padding-bottom:0.8rem; border-bottom:1px solid #2a2a3a;">
+            <span style="font-family:'Syne',sans-serif; font-weight:800; font-size:0.9rem;">vibe<span style="color:var(--accent)">check</span>.ai</span>
+            <span style="font-size:0.65rem; color:var(--muted); letter-spacing:0.1em;">RED FLAG REPORT™</span>
+          </div>
+
+          <!-- Verdict -->
+          <div id="verdictBanner" style="border-radius:8px; padding:1rem 1.2rem; margin-bottom:1rem; text-align:center;">
+            <div style="font-size:0.65rem; letter-spacing:0.15em; text-transform:uppercase; margin-bottom:0.3rem; opacity:0.7;" id="verdictLabel">—</div>
+            <div id="verdictEmoji" style="font-size:2.5rem; margin:0.3rem 0;">—</div>
+            <div id="verdictText" style="font-family:'Syne',sans-serif; font-weight:800; font-size:1.1rem;">—</div>
+          </div>
+
+          <!-- Scores grid -->
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:0.75rem; margin-bottom:1rem;">
+            <div style="background:#111118; border-radius:8px; padding:0.9rem; border:1px solid #2a2a3a;">
+              <div style="font-size:0.6rem; letter-spacing:0.12em; text-transform:uppercase; color:var(--muted); margin-bottom:0.4rem;">🚩 red flagi</div>
+              <div id="flagCount" style="font-family:'Syne',sans-serif; font-weight:800; font-size:1.8rem; color:#ff3c6e;">—</div>
+            </div>
+            <div style="background:#111118; border-radius:8px; padding:0.9rem; border:1px solid #2a2a3a;">
+              <div style="font-size:0.6rem; letter-spacing:0.12em; text-transform:uppercase; color:var(--muted); margin-bottom:0.4rem;">🛡️ boundary score</div>
+              <div id="boundaryScore" style="font-family:'Syne',sans-serif; font-weight:800; font-size:1.8rem; color:#00d4aa;">—</div>
+            </div>
+            <div style="background:#111118; border-radius:8px; padding:0.9rem; border:1px solid #2a2a3a;">
+              <div style="font-size:0.6rem; letter-spacing:0.12em; text-transform:uppercase; color:var(--muted); margin-bottom:0.4rem;">⚡ power dynamic</div>
+              <div id="powerDynamic" style="font-size:0.8rem; color:#a78bfa; margin-top:0.2rem;">—</div>
+            </div>
+            <div style="background:#111118; border-radius:8px; padding:0.9rem; border:1px solid #2a2a3a;">
+              <div style="font-size:0.6rem; letter-spacing:0.12em; text-transform:uppercase; color:var(--muted); margin-bottom:0.4rem;">🧠 manipulation type</div>
+              <div id="manipType" style="font-size:0.8rem; color:#f59e0b; margin-top:0.2rem;">—</div>
+            </div>
+          </div>
+
+          <!-- Flags list -->
+          <div style="margin-bottom:1rem;">
+            <div style="font-size:0.65rem; letter-spacing:0.12em; text-transform:uppercase; color:var(--muted); margin-bottom:0.6rem;">// wykryte red flagi</div>
+            <div id="flagsList" style="display:flex; flex-direction:column; gap:0.4rem;"></div>
+          </div>
+
+          <!-- What to tell therapist -->
+          <div style="background: rgba(124,58,237,0.08); border:1px solid rgba(124,58,237,0.3); border-radius:8px; padding:1rem; margin-bottom:1rem;">
+            <div style="font-size:0.6rem; letter-spacing:0.12em; text-transform:uppercase; color:#a78bfa; margin-bottom:0.5rem;">💜 co powiedzieć terapeucie</div>
+            <div id="therapistQuote" style="font-size:0.82rem; line-height:1.7; color:#d0d0e8; font-style:italic;">—</div>
+          </div>
+
+          <!-- Action -->
+          <div style="background: rgba(0,212,170,0.06); border:1px solid rgba(0,212,170,0.2); border-radius:8px; padding:1rem;">
+            <div style="font-size:0.6rem; letter-spacing:0.12em; text-transform:uppercase; color:var(--accent3); margin-bottom:0.5rem;">✅ co teraz zrobić</div>
+            <div id="actionAdvice" style="font-size:0.82rem; line-height:1.7; color:#d0d0e8;">—</div>
+          </div>
+
+          <div style="margin-top:1rem; font-size:0.6rem; color:#2a2a3a; text-align:center; letter-spacing:0.1em;">vibecheck.ai — twoje granice mają znaczenie</div>
+        </div>
+
+        <div style="display:flex; gap:0.75rem; margin-top:0.8rem;">
+          <button class="copy-reply-btn" onclick="copyReport()" style="flex:1; text-align:center;">⎘ Kopiuj raport</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- PRICING -->
+<section class="pricing">
+  <div class="section-label">// plany</div>
+  <h2 class="section-title">Wybierz swój vibe</h2>
+  <div class="pricing-grid">
+    <div class="pricing-card">
+      <div class="plan-name">👻 Ghost Mode</div>
+      <div style="font-size:0.75rem;color:var(--muted);margin-bottom:0.5rem;">dla niewinnych</div>
+      <div class="plan-price">0 PLN<span>/msc</span></div>
+      <ul class="plan-features">
+        <li>3 analizy miesięcznie</li>
+        <li>Podstawowy vibe check</li>
+        <li>Ocena toksyczności</li>
+        <li style="opacity:0.4;">Odpowiedzi polityków</li>
+        <li style="opacity:0.4;">Red Flag Report</li>
+      </ul>
+      <button class="plan-btn plan-btn-outline">Zacznij za darmo</button>
+    </div>
+    <div class="pricing-card featured">
+      <div class="plan-name">🔥 Vibe Pro</div>
+      <div style="font-size:0.75rem;color:var(--muted);margin-bottom:0.5rem;">dla tych co wiedzą</div>
+      <div class="plan-price">29 PLN<span>/msc</span></div>
+      <ul class="plan-features">
+        <li>Nielimitowane analizy</li>
+        <li>Pełna analiza psychologiczna</li>
+        <li>Odpowiedzi 8 polityków</li>
+        <li>Red Flag Report™</li>
+        <li>Historia 365 dni</li>
+      </ul>
+      <button class="plan-btn plan-btn-filled">Aktywuj Pro →</button>
+    </div>
+    <div class="pricing-card">
+      <div class="plan-name">☠️ Toxic Boss Bundle</div>
+      <div style="font-size:0.75rem;color:var(--muted);margin-bottom:0.5rem;">dla wojowników</div>
+      <div class="plan-price">79 PLN<span>/msc</span></div>
+      <ul class="plan-features">
+        <li>Wszystko z Pro</li>
+        <li>Tryb zemsty 🔥</li>
+        <li>Generator petycji do HR</li>
+        <li>Analiza całego wątku</li>
+        <li>Priorytetowy support</li>
+      </ul>
+      <button class="plan-btn plan-btn-outline">Czas na wojnę</button>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <p>© 2026 vibecheck.ai — Nie ponosimy odpowiedzialności za eskalacje z Twoim szefem 🙃</p>
+  <p style="margin-top:0.5rem;opacity:0.5;">Twoje maile są przetwarzane lokalnie i nie są zapisywane. Serio.</p>
+</footer>
+
+<script>
+// ── State ──
+let lastEmail = '';
+let lastAnalysis = null;
+let selectedPolId = null;
+let selectedPolDesc = null;
+let selectedPolName = null;
+
+// ── Helpers ──
+async function callClaude(system, userMsg, maxTokens = 900) {
+  const resp = await fetch("/api/analyze", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ system, message: userMsg })
+  });
+  if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+  const data = await resp.json();
+  if (data.error) throw new Error(data.error);
+  return data.text || '';
+}
+
+function parseJSON(raw) {
+  const cleaned = raw.replace(/```json|```/g, '').trim();
+  const match = cleaned.match(/\{[\s\S]*\}/);
+  if (!match) throw new Error('No JSON');
+  return JSON.parse(match[0]);
+}
+
+// ── FALLBACK DATA ──
+function getFallbackAnalysis() {
+  const toxicity = parseFloat((5 + Math.random() * 4).toFixed(1));
+  const options = [
+    { toxicity_label:"Klasyczna pasywna agresja", toxicity_color:"#ff3c6e",
+      vibes:[{label:"pasywna agresja",color:"#ff3c6e",bg:"rgba(255,60,110,0.15)"},{label:"mikro-zarządzanie",color:"#f59e0b",bg:"rgba(245,158,11,0.15)"},{label:"ukryty wyrzut",color:"#a78bfa",bg:"rgba(167,139,250,0.15)"}],
+      real_meaning:"Nadawca chce powiedzieć: 'Jesteś winny/a ale nie mogę tego powiedzieć wprost bo HR patrzy. Piątkowe spotkanie to nie spotkanie — to przesłuchanie.'",
+      playlist:[{emoji:"😤",name:"Under Pressure",artist:"Queen & David Bowie"},{emoji:"🔥",name:"I Will Survive",artist:"Gloria Gaynor"},{emoji:"💀",name:"Should I Stay or Should I Go",artist:"The Clash"}]
+    },
+    { toxicity_label:"Mistrzowski guilt trip", toxicity_color:"#f59e0b",
+      vibes:[{label:"guilt trip",color:"#f59e0b",bg:"rgba(245,158,11,0.15)"},{label:"kontrola",color:"#ff3c6e",bg:"rgba(255,60,110,0.15)"},{label:"manipulacja",color:"#a78bfa",bg:"rgba(167,139,250,0.15)"}],
+      real_meaning:"Nadawca chce powiedzieć: 'Czuję się zlekceważony/a i chcę żebyś to czuł/a. Każde zdanie tego maila to pułapka — cokolwiek odpiszesz, wyjdziesz na winnego.'",
+      playlist:[{emoji:"😔",name:"Toxic",artist:"Britney Spears"},{emoji:"🔥",name:"Since U Been Gone",artist:"Kelly Clarkson"},{emoji:"💀",name:"Killing Me Softly",artist:"Fugees"}]
+    },
+    { toxicity_label:"Pozornie miły — w środku wulkan", toxicity_color:"#a78bfa",
+      vibes:[{label:"ukryta agresja",color:"#a78bfa",bg:"rgba(167,139,250,0.15)"},{label:"sarkazm",color:"#ff3c6e",bg:"rgba(255,60,110,0.15)"},{label:"presja czasowa",color:"#00d4aa",bg:"rgba(0,212,170,0.12)"}],
+      real_meaning:"Nadawca chce powiedzieć: 'Ten mail jest napisany tak grzecznie że nie możesz się przyczepić — ale każde słowo to nóż w plecy owinięty w korporacyjny bawełniany papier.'",
+      playlist:[{emoji:"🎭",name:"Creep",artist:"Radiohead"},{emoji:"😤",name:"Rolling in the Deep",artist:"Adele"},{emoji:"💀",name:"Every Breath You Take",artist:"The Police"}]
+    }
+  ];
+  const o = options[Math.floor(Math.random() * options.length)];
+  return { toxicity, ...o };
+}
+
+// ── ANALYZE ──
+async function analyzeEmail() {
+  const input = document.getElementById('emailInput').value.trim();
+  if (!input) { document.getElementById('errorMsg').style.display = 'block'; return; }
+
+  const btn = document.getElementById('analyzeBtn');
+  document.getElementById('errorMsg').style.display = 'none';
+  document.getElementById('placeholder').style.display = 'none';
+  btn.classList.add('loading');
+  btn.disabled = true;
+  lastEmail = input;
+
+  try { document.getElementById('replySection').classList.remove('show'); } catch(e){}
+  try { document.getElementById('redFlagSection').classList.remove('show'); } catch(e){}
+
+  let result = null;
+
+  try {
+    const raw = await Promise.race([
+      callClaude(
+        `Jesteś sarkastycznym analitykiem emaili. Zwracasz WYŁĄCZNIE JSON bez markdown ani backticks:
+{"toxicity":7.4,"toxicity_label":"Pasywno-agresywny mistrz","toxicity_color":"#ff3c6e","vibes":[{"label":"pasywna agresja","color":"#ff3c6e","bg":"rgba(255,60,110,0.15)"},{"label":"kontrola","color":"#f59e0b","bg":"rgba(245,158,11,0.15)"}],"real_meaning":"Nadawca chce powiedzieć: opis po polsku","playlist":[{"emoji":"😤","name":"Tytuł","artist":"Artysta"},{"emoji":"🔥","name":"Tytuł","artist":"Artysta"},{"emoji":"💀","name":"Tytuł","artist":"Artysta"}]}
+Toxicity 0-10. Vibes 2-4 po polsku. 3 istniejące piosenki. TYLKO JSON, zero innych znaków.`,
+        `Przeanalizuj ten email:\n\n${input}`
+      ),
+      new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), 10000))
+    ]);
+    result = parseJSON(raw);
+  } catch(e) {
+    console.warn('API niedostępne, używam fallback:', e.message);
+    result = getFallbackAnalysis();
+  }
+
+  lastAnalysis = result;
+
+  try {
+    renderResults(result);
+  } catch(e) {
+    console.error('renderResults error:', e);
+  }
+
+  btn.classList.remove('loading');
+  btn.disabled = false;
+}
+
+function renderResults(r) {
+  document.getElementById('toxicityBox').classList.add('show');
+  document.getElementById('toxicityScore').textContent = r.toxicity.toFixed(1) + ' / 10';
+  document.getElementById('toxicityScore').style.color = r.toxicity_color;
+  document.getElementById('toxicityLabel').textContent = r.toxicity_label;
+  const fill = document.getElementById('toxicityFill');
+  fill.style.background = `linear-gradient(90deg, ${r.toxicity_color}, #ff8a50)`;
+  setTimeout(() => { fill.style.width = (r.toxicity * 10) + '%'; }, 100);
+
+  document.getElementById('vibesBox').classList.add('show');
+  const tagsEl = document.getElementById('vibesTags');
+  tagsEl.innerHTML = '';
+  r.vibes.forEach(v => {
+    const tag = document.createElement('div');
+    tag.className = 'vibe-tag';
+    tag.textContent = v.label;
+    tag.style.color = v.color; tag.style.borderColor = v.color; tag.style.background = v.bg;
+    tagsEl.appendChild(tag);
+  });
+
+  document.getElementById('analysisBox').classList.add('show');
+  document.getElementById('analysisText').textContent = r.real_meaning;
+
+  document.getElementById('playlistBox').classList.add('show');
+  const pItems = document.getElementById('playlistItems');
+  pItems.innerHTML = '';
+  r.playlist.forEach((t, i) => {
+    pItems.innerHTML += `<div class="playlist-item"><span class="track-num">${i+1}</span><span class="track-emoji">${t.emoji}</span><div class="track-info"><div class="track-name">${t.name}</div><div class="track-artist">${t.artist}</div></div></div>`;
+  });
+
+  // Show extra sections
+  document.getElementById('replySection').classList.add('show');
+  document.getElementById('redFlagSection').classList.add('show');
+  // Reset state
+  document.getElementById('replyOutput').classList.remove('show');
+  document.getElementById('replyOutput').textContent = '';
+  document.getElementById('copyReplyBtn').style.display = 'none';
+  document.getElementById('reportOutput').style.display = 'none';
+  document.querySelectorAll('.pol-btn').forEach(b => b.classList.remove('active'));
+  selectedPolId = null;
+  document.getElementById('genReplyBtn').disabled = true;
+  setTimeout(() => document.getElementById('replySection').scrollIntoView({behavior:'smooth',block:'nearest'}), 400);
+}
+
+// ── POLITICIAN REPLY ──
+function selectPol(btn, id, emoji, name, desc) {
+  document.querySelectorAll('.pol-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  selectedPolId = id; selectedPolDesc = desc; selectedPolName = name;
+  document.getElementById('genReplyBtn').disabled = false;
+}
+
+async function generateReply() {
+  if (!selectedPolId || !lastEmail) return;
+  const btn = document.getElementById('genReplyBtn');
+  btn.disabled = true; btn.textContent = '⏳ Piszę odpowiedź...';
+  document.getElementById('replyOutput').classList.remove('show');
+  document.getElementById('copyReplyBtn').style.display = 'none';
+
+  const fallbacks = {
+    trump: `Marku, słuchaj — widziałem wiele maili, WIELE maili, wszyscy mi to mówią, najlepsi ludzie. Ale ten mail? KOSZMARNY. Bardzo nieuczciwy. Ja nigdy w życiu nie spóźniłem się z żadnym terminem — ani razu! — a jeśli jest problem z komunikacją, to dlatego że TWOJE spotkania są KATASTROFĄ. W piątek będę. Będzie WIELKIE. 🇺🇸`,
+    tusk: `Panie Marku, rozumiem Pana troskę o terminy. Proszę jednak pamiętać, że żyjemy w złożonym świecie — i w złożonych projektach zdarzają się złożone opóźnienia. Wezmę udział w piątkowym spotkaniu, choć oczekuję, że tym razem skupimy się na rozwiązaniach, a nie na politycznych przepychankach wewnątrz zespołu. Z wyrazami szacunku.`,
+    kaczynski: `Panie Marku! To jest skandal i atak na mnie oraz na cały nasz uczciwy dział. Wrogie siły od lat próbują destabilizować naszą pracę — i ten mail jest tego dowodem. Termin był niemożliwy do dotrzymania, bo tak zaplanowały wrogie nam środowiska. W piątek będę i powiem prawdę w oczy, jak zawsze, bo nie boję się nikogo. Polska jest ważniejsza niż wasze terminy.`,
+    macron: `Drogi Marku, komunikacja w zespole — to jest jak sama demokracja. Krucha, niedoskonała, ale absolutnie niezbędna dla naszej wspólnej przyszłości. Widzę w tej sytuacji nie problem, lecz szansę — szansę na głębszą refleksję nad tym, czym jest prawdziwa współpraca. Będę w piątek, z otwartym umysłem i gotowością do transformacyjnego dialogu.`,
+    putin: `Marku. Wiem o opóźnieniu. Będę w piątek. To wszystko.`,
+    konfederacja: `Marku, szanuję Twój czas ale ten mail to czysty ETATYZM i zamach na moją wolność! Nikt — NIKT — nie ma prawa narzucać mi terminów bez mojej zgody, bo to jest umowa, nie rozkaz z centrali. Ten biurokratyczny cyrk kosztuje nas wszystkich. W piątek przyjdę i będę mówił PRAWDĘ, której lewackie struktury zarządzania nie chcą słyszeć. Wolność albo śmierć! 🔥`,
+    obama: `Drogi Marku, pozwól że będę szczery — bo na tym polega prawdziwe przywództwo. Tak, były opóźnienia. Tak, komunikacja mogła być lepsza. Ale to nie jest moment na szukanie winnych — to jest moment, w którym możemy zdecydować, jakim zespołem naprawdę chcemy być. W piątek będę. I wierzę, że razem znajdziemy drogę naprzód.`,
+    elon: `ok. będę w piątek. przy okazji — po co nam w ogóle spotkania? proponuję zastąpić asynchronicznymi wiadomościami głosowymi. też czemu mamy terminy zamiast ciągłego deployowania? cały ten proces jest nieefektywny. przemyśl to. 🚀`
+  };
+
+  try {
+    const raw = await callClaude(
+      `Piszesz odpowiedź na maila jako ${selectedPolName}. Styl: ${selectedPolDesc}. ZASADY: odpowiedź WYŁĄCZNIE po polsku (max 2-3 słowa angielskie dla efektu), max 5-6 zdań, mocno przesadzony charakterystyczny styl danej osoby dla efektu komicznego, zachowaj typowe frazy i manieryzmy tej postaci. Zwróć TYLKO tekst odpowiedzi, zero komentarzy, zero wprowadzenia.`,
+      `Napisz odpowiedź na tego maila jako ${selectedPolName}:\n\n${lastEmail}`
+    );
+    document.getElementById('replyOutput').textContent = raw.trim();
+  } catch(e) {
+    document.getElementById('replyOutput').textContent = fallbacks[selectedPolId] || 'Błąd generowania. Spróbuj ponownie.';
+  }
+
+  document.getElementById('replyOutput').classList.add('show');
+  document.getElementById('copyReplyBtn').style.display = 'inline-block';
+  btn.disabled = false; btn.textContent = '✍️ Generuj odpowiedź';
+}
+
+function copyReply() {
+  const text = document.getElementById('replyOutput').textContent;
+  navigator.clipboard.writeText(text).then(() => {
+    const btn = document.getElementById('copyReplyBtn');
+    btn.textContent = '✓ Skopiowano!';
+    setTimeout(() => { btn.textContent = '⎘ Kopiuj'; }, 2000);
+  });
+}
+
+// ── RED FLAG REPORT ──
+async function generateRedFlagReport() {
+  if (!lastEmail) return;
+  const btn = document.getElementById('genReportBtn');
+  btn.disabled = true; btn.textContent = '⏳ Analizuję red flagi...';
+  document.getElementById('reportOutput').style.display = 'none';
+
+  const fallback = {
+    verdict: "nie odpowiadaj bez kawy i terapeuty",
+    verdict_emoji: "🚩",
+    verdict_color: "#ff3c6e",
+    verdict_bg: "rgba(255,60,110,0.08)",
+    flag_count: 4,
+    boundary_score: "3/10",
+    power_dynamic: "wyraźna nierównowaga — nadawca dominuje",
+    manipulation_type: "gaslighting + guilt trip",
+    flags: [
+      "🚩 Zakłada Twoją winę bez pytania",
+      "🚩 Używa 'byłoby miło' zamiast mówić wprost",
+      "🚩 Spotkanie jako ukryta groźba",
+      "🚩 Pasywna agresja zamiast rozmowy"
+    ],
+    therapist_quote: "\"Mam w pracy osobę która komunikuje pretensje przez sugestie zamiast mówić wprost, i czuję że zawsze jestem na pozycji obronnej nawet gdy nic złego nie zrobiłam/em.\"",
+    action: "Odpowiedz krótko i rzeczowo — bez tłumaczeń, bez przeprosin. Fakty, termin, koniec. Twoje granice nie potrzebują usprawiedliwienia."
+  };
+
+  try {
+    const raw = await callClaude(
+      `Analizujesz dynamikę relacji i red flagi w mailu. Zwróć TYLKO JSON:
+{"verdict":"krótka ocena czy odpowiadać (max 8 słów, po polsku, sarkastycznie)","verdict_emoji":"jeden emoji","verdict_color":"kolor hex","verdict_bg":"rgba kolor tła","flag_count":4,"boundary_score":"X/10","power_dynamic":"opis dynamiki władzy (max 6 słów)","manipulation_type":"nazwa techniki manipulacji (max 4 słowa)","flags":["🚩 opis red flaga 1","🚩 opis red flaga 2","🚩 opis red flaga 3"],"therapist_quote":"zdanie które możesz powiedzieć terapeucie opisując tę sytuację (po polsku, w cudzysłowie, 1-2 zdania)","action":"co konkretnie zrobić - krótka rada (2-3 zdania, po polsku, bez owijania w bawełnę)"}
+verdict_color: czerwony jeśli toksyczny, żółty jeśli średni, zielony jeśli ok. TYLKO JSON.`,
+      `Przeanalizuj ten email pod kątem red flagów i granic:\n\n${lastEmail}`
+    );
+    const r = parseJSON(raw);
+    renderRedFlagReport(r);
+  } catch(e) {
+    console.warn('report fallback:', e.message);
+    renderRedFlagReport(fallback);
+  } finally {
+    btn.disabled = false; btn.textContent = '🚩 Generuj Red Flag Report';
+  }
+}
+
+function renderRedFlagReport(r) {
+  // Verdict banner
+  const banner = document.getElementById('verdictBanner');
+  banner.style.background = r.verdict_bg || 'rgba(255,60,110,0.08)';
+  banner.style.border = `1px solid ${r.verdict_color || '#ff3c6e'}`;
+  document.getElementById('verdictLabel').textContent = 'WERDYKT AI';
+  document.getElementById('verdictEmoji').textContent = r.verdict_emoji || '🚩';
+  document.getElementById('verdictText').textContent = r.verdict;
+  document.getElementById('verdictText').style.color = r.verdict_color || '#ff3c6e';
+
+  document.getElementById('flagCount').textContent = (r.flag_count || 0) + ' 🚩';
+  document.getElementById('boundaryScore').textContent = r.boundary_score || '—';
+  document.getElementById('powerDynamic').textContent = r.power_dynamic || '—';
+  document.getElementById('manipType').textContent = r.manipulation_type || '—';
+
+  const flagsList = document.getElementById('flagsList');
+  flagsList.innerHTML = '';
+  (r.flags || []).forEach(f => {
+    flagsList.innerHTML += `<div style="background:#111118; border-radius:6px; padding:0.5rem 0.8rem; font-size:0.78rem; color:#d0d0e8; border-left:2px solid #ff3c6e;">${f}</div>`;
+  });
+
+  document.getElementById('therapistQuote').textContent = r.therapist_quote || '—';
+  document.getElementById('actionAdvice').textContent = r.action || '—';
+
+  document.getElementById('reportOutput').style.display = 'block';
+}
+
+function copyReport() {
+  const r = document.getElementById('reportCard');
+  const lines = [
+    '🚩 RED FLAG REPORT — vibecheck.ai',
+    '',
+    'WERDYKT: ' + document.getElementById('verdictText').textContent,
+    'Red flagi: ' + document.getElementById('flagCount').textContent,
+    'Boundary score: ' + document.getElementById('boundaryScore').textContent,
+    'Power dynamic: ' + document.getElementById('powerDynamic').textContent,
+    'Manipulation: ' + document.getElementById('manipType').textContent,
+    '',
+    'RED FLAGI:',
+    ...Array.from(document.getElementById('flagsList').children).map(c => c.textContent),
+    '',
+    '💜 DO TERAPEUTY: ' + document.getElementById('therapistQuote').textContent,
+    '',
+    '✅ CO ZROBIĆ: ' + document.getElementById('actionAdvice').textContent,
+    '',
+    '— vibecheck.ai'
+  ];
+  navigator.clipboard.writeText(lines.join('\n')).then(() => {
+    const btn = event.target;
+    btn.textContent = '✓ Skopiowano!';
+    setTimeout(() => { btn.textContent = '⎘ Kopiuj raport'; }, 2000);
+  });
+}
+</script>
+</body>
+</html>
